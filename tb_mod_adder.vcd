@@ -1,0 +1,67 @@
+$date
+	Sat Feb 28 10:03:20 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_mod_adder $end
+$var wire 12 ! result [11:0] $end
+$var reg 12 " a [11:0] $end
+$var reg 12 # b [11:0] $end
+$scope module dut $end
+$var wire 12 $ a [11:0] $end
+$var wire 12 % b [11:0] $end
+$var wire 13 & sum [12:0] $end
+$var wire 12 ' result [11:0] $end
+$var parameter 32 ( Q $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b110100000001 (
+$end
+#0
+$dumpvars
+b110100000000 '
+b110100000000 &
+b0 %
+b110100000000 $
+b0 #
+b110100000000 "
+b110100000000 !
+$end
+#10
+b0 !
+b0 '
+b101001001 #
+b101001001 %
+b110100000001 &
+b101110111000 "
+b101110111000 $
+#20
+b1 !
+b1 '
+b110100000010 &
+b101001010 #
+b101001010 %
+#30
+b110011111111 !
+b110011111111 '
+b110100000000 #
+b110100000000 %
+b1101000000000 &
+b110100000000 "
+b110100000000 $
+#40
+b0 !
+b0 '
+b0 #
+b0 %
+b0 &
+b0 "
+b0 $
+#100
