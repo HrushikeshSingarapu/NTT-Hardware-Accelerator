@@ -6,7 +6,7 @@ module butterfly(
     output [11:0] b_out
 );
 
-wire [[11:0] t;
+wire [11:0] t;
 mod_multiplier mult(
     .a(zeta),
     .b(b),
