@@ -2,10 +2,21 @@
 
 module tb_butterfly;
 
-    reg  [11:0] a, b, zeta;
-    wire [11:0] a_out, b_out;
+    // signals
+    logic [11:0] a;
+    logic [11:0] b;
+    logic [11:0] zeta;
 
-    butterfly dut (
+    logic [11:0] a_out;
+    logic [11:0] b_out;
+
+    // expected values
+    int expected_a;
+    int expected_b;
+    int t;
+
+    // DUT
+    butterfly dut(
         .a(a),
         .b(b),
         .zeta(zeta),
@@ -13,50 +24,74 @@ module tb_butterfly;
         .b_out(b_out)
     );
 
+    // waveform dump
     initial begin
         $dumpfile("tb_butterfly.vcd");
         $dumpvars(0, tb_butterfly);
+    end
 
-        // both outputs must be in range 0 to 3328
-        // a_out = a + (zeta*b) mod q
-        // b_out = a - (zeta*b) mod q
+    //-------------------------------------
+    // stimulus task
+    //-------------------------------------
+    task run_test(input int a_in,
+                  input int b_in,
+                  input int zeta_in);
 
-        // test 1: zeros
-        a = 0; b = 0; zeta = 0; #10;
-        if (a_out >= 3329 || b_out >= 3329)
-            $display("FAIL | test1 | a_out=%0d b_out=%0d", a_out, b_out);
+        a = a_in;
+        b = b_in;
+        zeta = zeta_in;
+
+        #10;
+
+        compute_expected();
+
+        check_results();
+
+    endtask
+
+    //-------------------------------------
+    // compute expected results
+    //-------------------------------------
+    task compute_expected();
+
+        t = (b * zeta) % 3329;
+
+        expected_a = (a + t) % 3329;
+
+        expected_b = (a - t) % 3329;
+
+        if(expected_b < 0)
+            expected_b = expected_b + 3329;
+
+    endtask
+
+    //-------------------------------------
+    // scoreboard / checker
+    //-------------------------------------
+    task check_results();
+
+        if(a_out == expected_a && b_out == expected_b)
+            $display("PASS | a=%0d b=%0d zeta=%0d | a_out=%0d b_out=%0d",
+                      a,b,zeta,a_out,b_out);
         else
-            $display("PASS | test1 zeros | a_out=%0d b_out=%0d", a_out, b_out);
+            $display("FAIL | a=%0d b=%0d zeta=%0d | expected (%0d,%0d) got (%0d,%0d)",
+                      a,b,zeta,expected_a,expected_b,a_out,b_out);
 
-        // test 2: simple values
-        a = 100; b = 200; zeta = 17; #10;
-        if (a_out >= 3329 || b_out >= 3329)
-            $display("FAIL | test2 | a_out=%0d b_out=%0d", a_out, b_out);
-        else
-            $display("PASS | test2 zeta=17 | a_out=%0d b_out=%0d", a_out, b_out);
+    endtask
 
-        // test 3: max values
-        a = 3328; b = 3328; zeta = 3328; #10;
-        if (a_out >= 3329 || b_out >= 3329)
-            $display("FAIL | test3 | a_out=%0d b_out=%0d", a_out, b_out);
-        else
-            $display("PASS | test3 max | a_out=%0d b_out=%0d", a_out, b_out);
+    //-------------------------------------
+    // test sequence
+    //-------------------------------------
+    initial begin
 
-        // test 4: zeta = 1 (t = b, so a_out = a+b, b_out = a-b)
-        a = 500; b = 300; zeta = 1; #10;
-        if (a_out >= 3329 || b_out >= 3329)
-            $display("FAIL | test4 | a_out=%0d b_out=%0d", a_out, b_out);
-        else
-            $display("PASS | test4 zeta=1 | a_out=%0d b_out=%0d", a_out, b_out);
+        run_test(10,20,17);
+        run_test(100,200,17);
+        run_test(3328,3328,17);
+        run_test(500,123,289);
+        run_test(1000,300,1584);
 
-        // test 5: a=0 b=0 zeta=max
-        a = 0; b = 0; zeta = 3328; #10;
-        if (a_out >= 3329 || b_out >= 3329)
-            $display("FAIL | test5 | a_out=%0d b_out=%0d", a_out, b_out);
-        else
-            $display("PASS | test5 | a_out=%0d b_out=%0d", a_out, b_out);
+        #20 $finish;
 
-        #50 $finish;
     end
 
 endmodule
