@@ -2,96 +2,102 @@
 
 module tb_butterfly;
 
-    // signals
-    logic [11:0] a;
-    logic [11:0] b;
-    logic [11:0] zeta;
+logic [11:0] a;
+logic [11:0] b;
+logic [11:0] zeta;
 
-    logic [11:0] a_out;
-    logic [11:0] b_out;
+logic [11:0] a_out;
+logic [11:0] b_out;
 
-    // expected values
-    int expected_a;
-    int expected_b;
-    int t;
+int expected_a;
+int expected_b;
+int t;
 
-    // DUT
-    butterfly dut(
-        .a(a),
-        .b(b),
-        .zeta(zeta),
-        .a_out(a_out),
-        .b_out(b_out)
-    );
+parameter Q = 3329;
 
-    // waveform dump
-    initial begin
-        $dumpfile("tb_butterfly.vcd");
-        $dumpvars(0, tb_butterfly);
-    end
+// DUT
+butterfly dut(
+    .a(a),
+    .b(b),
+    .zeta(zeta),
+    .a_out(a_out),
+    .b_out(b_out)
+);
 
-    //-------------------------------------
-    // stimulus task
-    //-------------------------------------
-    task run_test(input int a_in,
-                  input int b_in,
-                  input int zeta_in);
+initial begin
+    $dumpfile("tb_butterfly.vcd");
+    $dumpvars(0,tb_butterfly);
+end
 
-        a = a_in;
-        b = b_in;
-        zeta = zeta_in;
 
-        #10;
+// --------------------------------------
+// Compute expected butterfly result
+// --------------------------------------
 
-        compute_expected();
+task compute_expected;
 
-        check_results();
+    t = (int'(b) * int'(zeta)) % Q;
 
-    endtask
+    expected_a = (a + t) % Q;
 
-    //-------------------------------------
-    // compute expected results
-    //-------------------------------------
-    task compute_expected();
+    expected_b = a - t;
 
-        t = (b * zeta) % 3329;
+    if(expected_b < 0)
+        expected_b = expected_b + Q;
 
-        expected_a = (a + t) % 3329;
+endtask
 
-        expected_b = (a - t) % 3329;
 
-        if(expected_b < 0)
-            expected_b = expected_b + 3329;
+// --------------------------------------
+// Check DUT outputs
+// --------------------------------------
 
-    endtask
+task check;
 
-    //-------------------------------------
-    // scoreboard / checker
-    //-------------------------------------
-    task check_results();
+    if(a_out == expected_a && b_out == expected_b)
+        $display("PASS | a=%0d b=%0d zeta=%0d | a_out=%0d b_out=%0d",
+                 a,b,zeta,a_out,b_out);
+    else
+        $display("FAIL | a=%0d b=%0d zeta=%0d | expected (%0d,%0d) got (%0d,%0d)",
+                 a,b,zeta,expected_a,expected_b,a_out,b_out);
 
-        if(a_out == expected_a && b_out == expected_b)
-            $display("PASS | a=%0d b=%0d zeta=%0d | a_out=%0d b_out=%0d",
-                      a,b,zeta,a_out,b_out);
-        else
-            $display("FAIL | a=%0d b=%0d zeta=%0d | expected (%0d,%0d) got (%0d,%0d)",
-                      a,b,zeta,expected_a,expected_b,a_out,b_out);
+endtask
 
-    endtask
 
-    //-------------------------------------
-    // test sequence
-    //-------------------------------------
-    initial begin
+// --------------------------------------
+// Run single test
+// --------------------------------------
 
-        run_test(10,20,17);
-        run_test(100,200,17);
-        run_test(3328,3328,17);
-        run_test(500,123,289);
-        run_test(1000,300,1584);
+task run_test(input int a_in,
+              input int b_in,
+              input int zeta_in);
 
-        #20 $finish;
+    a = a_in;
+    b = b_in;
+    zeta = zeta_in;
 
-    end
+    #10;
+
+    compute_expected();
+    check();
+
+endtask
+
+
+// --------------------------------------
+// Test sequence
+// --------------------------------------
+
+initial begin
+
+    run_test(10,20,17);
+    run_test(100,200,17);
+    run_test(3328,3328,17);
+    run_test(500,123,289);
+    run_test(1000,300,1584);
+
+    #20 $finish;
+
+end
 
 endmodule

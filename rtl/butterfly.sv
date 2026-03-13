@@ -1,3 +1,11 @@
+// ======================================================
+// Module: Butterfly Unit
+// Description: Performs NTT butterfly operation
+// t = (b * zeta) mod q
+// a_out = (a + t) mod q
+// b_out = (a - t) mod q
+// ======================================================
+
 module butterfly(
     input  [11:0] a,
     input  [11:0] b,
@@ -8,21 +16,21 @@ module butterfly(
 
 wire [11:0] t;
 
-// multiply b with twiddle factor
+// t = b * zeta mod q
 mod_multiplier mult(
     .a(zeta),
     .b(b),
     .result(t)
 );
 
-// compute a + t mod q
+// a_out = (a + t) mod q
 mod_adder add(
     .a(a),
     .b(t),
     .result(a_out)
 );
 
-// compute a - t mod q
+// b_out = (a - t) mod q
 mod_subtractor sub(
     .a(a),
     .b(t),
