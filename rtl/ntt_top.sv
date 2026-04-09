@@ -1,103 +1,60 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 
 module ntt_top (
-    input  logic        clk,
-    input  logic        rst,
-    input  logic        start,
-    output logic        done,
-
-    input  logic        load_we,
-    input  logic [7:0]  load_addr,
-    input  logic [11:0] load_data,
-
-    input  logic [7:0]  rd_addr,
-    output logic [11:0] rd_data
+    input  wire        clk,
+    input  wire        rst,
+    input  wire        start,
+    output wire        done,
+    input  wire        load_we,
+    input  wire [7:0]  load_addr,
+    input  wire [11:0] load_data,
+    input  wire [7:0]  rd_addr,
+    output wire [11:0] rd_data
 );
 
-    logic [7:0]  addr_a, addr_b;
-    logic [6:0]  twiddle_addr;
-    logic        ag_valid, ag_done, ag_start, ag_en;
+    wire [7:0]  addr_a, addr_b;
+    wire [11:0] ram_out_a, ram_out_b;
+    wire [11:0] bfly_even, bfly_odd;
+    wire [11:0] twiddle_factor;
+    wire        ctrl_we, busy;
+    wire [6:0]  rom_addr;
 
-    logic        we;
-    logic [7:0]  we_addr_a, we_addr_b;
+    // Port A: load takes priority, then NTT write/read, then readback
+    wire we_port_a   = load_we | ctrl_we;
+    wire we_port_b   = ctrl_we;
 
-    logic [11:0] data_out_a, data_out_b;
-    logic [11:0] zeta;
-    logic [11:0] a_out, b_out;
+    wire [7:0] final_addr_a = load_we ? load_addr :
+                              busy    ? addr_a     : rd_addr;
+    wire [7:0] final_addr_b = addr_b;
 
-    logic        mem_we;
-    logic [7:0]  mem_addr_a, mem_addr_b;
-    logic [11:0] mem_din_a,  mem_din_b;
+    wire [11:0] final_din_a = load_we ? load_data : bfly_even;
+    wire [11:0] final_din_b = bfly_odd;
 
-    // ntt_running: addr_gen is active
-    logic ntt_running;
-    assign ntt_running = ag_valid;
+    assign rd_data = ram_out_a;
 
-    // addr mux:
-    // load     → load_addr
-    // we       → we_addr (writeback)
-    // ntt read → addr_a from addr_gen
-    // idle     → rd_addr (readback after done)
-    assign mem_we     = load_we | we;
-    assign mem_addr_a = load_we    ? load_addr  :
-                        we         ? we_addr_a  :
-                        ntt_running? addr_a     : rd_addr;
-    assign mem_addr_b = we         ? we_addr_b  : addr_b;
-    assign mem_din_a  = load_we    ? load_data  : a_out;
-    assign mem_din_b  = b_out;
-
-    assign rd_data = data_out_a;
-
-    poly_mem u_mem (
-        .clk       (clk),
-        .we        (mem_we),
-        .addr_a    (mem_addr_a),
-        .addr_b    (mem_addr_b),
-        .data_in_a (mem_din_a),
-        .data_in_b (mem_din_b),
-        .data_out_a(data_out_a),
-        .data_out_b(data_out_b)
+    ntt_controller control_unit (
+        .clk(clk), .rst(rst), .start(start),
+        .ram_addr_a(addr_a), .ram_addr_b(addr_b),
+        .ram_we(ctrl_we), .rom_addr(rom_addr),
+        .done(done), .busy(busy)
     );
 
-    twiddle_rom u_rom (
-        .addr(twiddle_addr),
-        .data(zeta)
+    poly_mem ram_unit (
+        .clk(clk),
+        .we_a(we_port_a), .we_b(we_port_b),
+        .addr_a(final_addr_a), .addr_b(final_addr_b),
+        .din_a(final_din_a), .din_b(final_din_b),
+        .dout_a(ram_out_a), .dout_b(ram_out_b)
     );
 
-    butterfly u_bf (
-        .a    (data_out_a),
-        .b    (data_out_b),
-        .zeta (zeta),
-        .a_out(a_out),
-        .b_out(b_out)
+    twiddle_rom rom_unit (
+        .addr(rom_addr),
+        .zeta(twiddle_factor)
     );
 
-    addr_gen u_ag (
-        .clk         (clk),
-        .rst         (rst),
-        .start       (ag_start),
-        .en          (ag_en),
-        .addr_a      (addr_a),
-        .addr_b      (addr_b),
-        .twiddle_addr(twiddle_addr),
-        .valid       (ag_valid),
-        .done        (ag_done)
-    );
-
-    ntt_controller u_ctrl (
-        .clk      (clk),
-        .rst      (rst),
-        .start    (start),
-        .done     (done),
-        .ag_start (ag_start),
-        .ag_en    (ag_en),
-        .ag_valid (ag_valid),
-        .ag_done  (ag_done),
-        .ag_addr_a(addr_a),
-        .ag_addr_b(addr_b),
-        .we       (we),
-        .we_addr_a(we_addr_a),
-        .we_addr_b(we_addr_b)
+    butterfly math_engine (
+        .a(ram_out_a), .b(ram_out_b), .w(twiddle_factor),
+        .even(bfly_even), .odd(bfly_odd)
     );
 
 endmodule

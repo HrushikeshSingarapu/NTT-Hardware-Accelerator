@@ -1,40 +1,30 @@
-// ======================================================
-// Module: Butterfly Unit
-// Description: Performs NTT butterfly operation
-// t = (b * zeta) mod q
-// a_out = (a + t) mod q
-// b_out = (a - t) mod q
-// ======================================================
+`timescale 1ns / 1ps
 
 module butterfly(
-    input  [11:0] a,
-    input  [11:0] b,
-    input  [11:0] zeta,
-    output [11:0] a_out,
-    output [11:0] b_out
+    input  logic [11:0] a,
+    input  logic [11:0] b,
+    input  logic [11:0] w,
+    output logic [11:0] even,
+    output logic [11:0] odd
 );
+    wire [11:0] t;
+    
+    // Note: We use the port name 'out' to match the mod modules
+    mod_multiplier mult (
+        .a(b), 
+        .b(w), 
+        .out(t)
+    );
 
-wire [11:0] t;
+    mod_adder add (
+        .a(a), 
+        .b(t), 
+        .out(even)
+    );
 
-// t = b * zeta mod q
-mod_multiplier mult(
-    .a(zeta),
-    .b(b),
-    .result(t)
-);
-
-// a_out = (a + t) mod q
-mod_adder add(
-    .a(a),
-    .b(t),
-    .result(a_out)
-);
-
-// b_out = (a - t) mod q
-mod_subtractor sub(
-    .a(a),
-    .b(t),
-    .result(b_out)
-);
-
+    mod_subtractor sub (
+        .a(a), 
+        .b(t), 
+        .out(odd)
+    );
 endmodule

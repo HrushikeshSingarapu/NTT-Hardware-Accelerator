@@ -1,32 +1,36 @@
-`timescale 1ns/1ps
+`timescale 1ns / 1ps
 
 module poly_mem (
-    input         clk,
-    input         we,
-    input  [7:0]  addr_a,
-    input  [7:0]  addr_b,
-    input  [11:0] data_in_a,
-    input  [11:0] data_in_b,
-    output reg [11:0] data_out_a,
-    output reg [11:0] data_out_b
+    input  wire        clk,
+    input  wire        we_a,
+    input  wire        we_b,
+    input  wire [7:0]  addr_a,
+    input  wire [7:0]  addr_b,
+    input  wire [11:0] din_a,
+    input  wire [11:0] din_b,
+    output reg  [11:0] dout_a,
+    output reg  [11:0] dout_b
 );
-
     reg [11:0] mem [0:255];
 
-    integer i;
+    integer k;
     initial begin
-        for (i = 0; i < 256; i = i + 1)
-            mem[i] = 0;
+        for (k = 0; k < 256; k = k + 1)
+            mem[k] = 12'd0;
     end
 
     always @(posedge clk) begin
-        if (we) begin
-            mem[addr_a] <= data_in_a;
-            if (addr_b != addr_a)
-                mem[addr_b] <= data_in_b;
-        end
-        data_out_a <= mem[addr_a];
-        data_out_b <= mem[addr_b];
+        // Write port A
+        if (we_a)
+            mem[addr_a] <= din_a;
+
+        // Write port B
+        if (we_b)
+            mem[addr_b] <= din_b;
+
+        // Read always (output reflects mem state from this cycle)
+        dout_a <= mem[addr_a];
+        dout_b <= mem[addr_b];
     end
 
 endmodule

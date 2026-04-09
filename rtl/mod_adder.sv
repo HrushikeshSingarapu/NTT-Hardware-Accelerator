@@ -1,23 +1,16 @@
-// ======================================================
-// Module: Modular Adder
-// Description: Performs (a + b) mod q for Kyber NTT
-// Modulus q = 3329
-// ======================================================
+`timescale 1ns / 1ps
 
 module mod_adder (
-    input  [11:0] a,     // 12-bit input
-    input  [11:0] b,     // 12-bit input
-    output [11:0] result // 12-bit result
+    input  wire [11:0] a,
+    input  wire [11:0] b,
+    output wire [11:0] out
 );
-
-    // Kyber modulus
-    parameter Q = 3329;
-
-    wire [12:0] sum;  // 13-bit to hold overflow
-
+    // 13 bits to capture potential overflow before reduction
+    wire [12:0] sum;
+    
     assign sum = a + b;
-
-    // Modular reduction
-    assign result = (sum >= Q) ? sum - Q : sum;
+    
+    // Logic: If sum >= 3329, subtract 3329. Else, keep sum.
+    assign out = (sum >= 13'd3329) ? (sum - 13'd3329) : sum[11:0];
 
 endmodule

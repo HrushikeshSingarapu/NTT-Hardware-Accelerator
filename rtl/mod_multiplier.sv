@@ -1,12 +1,16 @@
+`timescale 1ns / 1ps
 
-module mod_multiplier(
-    input  [11:0] a,
-    input  [11:0] b,
-    output [11:0] result
+module mod_multiplier (
+    input  wire [11:0] a,
+    input  wire [11:0] b,
+    output wire [11:0] out
 );
-    parameter Q = 3329;
+    // Product can be up to 12x12 = 24 bits
     wire [23:0] product;
+    
     assign product = a * b;
-    assign result = product % Q;
+    
+    // The modulus operator gives the remainder
+    assign out = product % 13'd3329;
 
 endmodule

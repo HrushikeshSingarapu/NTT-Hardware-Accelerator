@@ -1,11 +1,18 @@
+`timescale 1ns / 1ps
+
 module mod_subtractor (
-    input  [11:0] a,
-    input  [11:0] b,
-    output [11:0] result
+    input  wire [11:0] a,
+    input  wire [11:0] b,
+    output wire [11:0] out
 );
-
-parameter Q = 3329;
-
-assign result = (a >= b) ? (a - b) : (a - b + Q);
+    wire [12:0] diff;
+    
+    // Logic: If a < b, the result would be negative. 
+    // In modular math, we handle this by adding the modulus (3329).
+    // Example: 2 - 5 (mod 3329) = -3 + 3329 = 3326.
+    
+    assign diff = (a >= b) ? (a - b) : (a + 13'd3329 - b);
+    
+    assign out = diff[11:0];
 
 endmodule
