@@ -1,0 +1,8 @@
+NTT FPGA VERIFICATION RESULTS
+==================================================
+Software time (Python): 244.25 us
+Hardware cycles: 10
+Hardware time: 0.100 us
+Speedup: 2442.5x
+Mismatches: 0/256
+Status: PASS
