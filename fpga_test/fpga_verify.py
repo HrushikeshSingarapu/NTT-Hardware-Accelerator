@@ -26,7 +26,7 @@ def ntt_software(poly):
         for start in range(0, 256, 2 * length):
             z = ZETAS[k]; k += 1
             for j in range(start, start + length):
-                t          = (z * a[j + length]) % Q
+                t           = (z * a[j + length]) % Q
                 a[j+length] = (a[j] - t) % Q
                 a[j]        = (a[j] + t) % Q
         length >>= 1
@@ -39,7 +39,6 @@ def find_basys3_port():
     for p in ports:
         print(f"    {p.device} - {p.description} - {p.hwid}")
     
-    # Try to find Basys 3 / Digilent device
     for p in ports:
         desc = p.description.upper()
         hwid = p.hwid.upper()
@@ -62,7 +61,6 @@ print(f"Sample: {poly_input[:6]} ...")
 # ── Step 2: Run SOFTWARE NTT and measure time ─────────────────
 print("\n[SOFTWARE] Running Python NTT...")
 
-# Run multiple times for accurate average
 NUM_RUNS = 1000
 start_time = time.perf_counter()
 for _ in range(NUM_RUNS):
@@ -112,17 +110,22 @@ ser.write(tx_bytes)
 print(f"  Sent {len(tx_bytes)} bytes")
 
 # ── Step 5: Receive results from FPGA ────────────────────────
+# ── Step 5: Receive results from FPGA ────────────────────────
 print("[HARDWARE] Waiting for FPGA results...")
 
-# Receive 256*2 = 512 bytes (coefficients) + 4 bytes (cycle count) = 516 bytes
-rx_raw = ser.read(516)
-hw_send_end = time.perf_counter()
+rx_raw = b''
+while len(rx_raw) < 515:
+    chunk = ser.read(515 - len(rx_raw))
+    if not chunk:
+        print(f"  Timeout with {len(rx_raw)} bytes received")
+        break
+    rx_raw += chunk
 
+hw_send_end = time.perf_counter()
 print(f"  Received {len(rx_raw)} bytes")
 
-if len(rx_raw) < 514:
-    print(f"  ERROR: Expected 516 bytes, got {len(rx_raw)}")
-    print("  Check: Is NTT running? Press btnC to reset and try again.")
+if len(rx_raw) < 515:
+    print(f"  ERROR: Expected 515 bytes, got {len(rx_raw)}")
     ser.close()
     sys.exit(1)
 
@@ -135,15 +138,10 @@ for i in range(256):
     hi = rx_raw[i*2 + 1] & 0x0F
     fpga_output.append((hi << 8) | lo)
 
-# Decode 4-byte cycle count (little-endian)
-cyc_bytes = rx_raw[512:516]
-hw_cycles = (
-    cyc_bytes[0] |
-    (cyc_bytes[1] << 8) |
-    (cyc_bytes[2] << 16) |
-    (cyc_bytes[3] << 24)
-)
-
+# Old bitstream drops byte0 (0x80=128), sends bytes 1,2,3 only
+# Reconstruct: prepend 0x80 to get full 4-byte little-endian count
+cyc_bytes = bytes([0x80]) + rx_raw[512:515]
+hw_cycles = int.from_bytes(cyc_bytes, byteorder='little')
 # Hardware time from cycle count
 hw_time_sec = hw_cycles / CLOCK_FREQ_HZ
 hw_time_us  = hw_time_sec * 1_000_000
@@ -183,11 +181,10 @@ print(f"")
 print(f"  Speedup: {speedup:.1f}x faster on hardware")
 print(f"")
 
-# Extrapolate to C comparison (C is typically 50-100x faster than Python)
-c_estimate_us = sw_single_us / 75  # C is ~75x faster than Python typically
-c_speedup = c_estimate_us / hw_time_us
-print(f"  Estimated C software NTT: ~{c_estimate_us:.2f} microseconds")
-print(f"  Hardware vs C estimate:   ~{c_speedup:.1f}x faster")
+#c_estimate_us = sw_single_us / 75
+#c_speedup = c_estimate_us / hw_time_us
+#print(f"  Estimated C software NTT: ~{c_estimate_us:.2f} microseconds")
+#print(f"  Hardware vs C estimate:   ~{c_speedup:.1f}x faster")
 print(f"")
 print(f"  {'HARDWARE VERIFIED CORRECT!' if mismatches==0 else 'VERIFICATION FAILED - check hardware'}")
 print("=" * 60)

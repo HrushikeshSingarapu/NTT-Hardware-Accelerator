@@ -5,6 +5,7 @@ module ntt_top (
     input  wire        rst,
     input  wire        start,
     output wire        done,
+    output wire        busy,
     input  wire        load_we,
     input  wire [7:0]  load_addr,
     input  wire [11:0] load_data,
@@ -16,7 +17,7 @@ module ntt_top (
     wire [11:0] ram_out_a, ram_out_b;
     wire [11:0] bfly_even, bfly_odd;
     wire [11:0] twiddle_factor;
-    wire        ctrl_we, busy;
+    wire        ctrl_we;
     wire [6:0]  rom_addr;
 
     // Port A: load takes priority, then NTT write/read, then readback
