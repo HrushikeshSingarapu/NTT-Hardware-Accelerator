@@ -6,11 +6,12 @@ module ntt_top (
     input  wire        start,
     output wire        done,
     output wire        busy,
+    output wire [11:0] rd_data,
     input  wire        load_we,
     input  wire [7:0]  load_addr,
     input  wire [11:0] load_data,
-    input  wire [7:0]  rd_addr,
-    output wire [11:0] rd_data
+    input  wire [7:0]  rd_addr
+    
 );
 
     wire [7:0]  addr_a, addr_b;

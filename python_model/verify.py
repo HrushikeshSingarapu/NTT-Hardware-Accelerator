@@ -96,6 +96,6 @@ hw_us_sim     = HW_CYCLES_SIM / HW_FREQ_HZ * 1_000_000
 
 print(f"\n── Performance Summary ──")
 print(f"Software NTT (Python):     {sw_us:.2f} us")
-print(f"Hardware NTT (simulation): {HW_CYCLES_SIM} cycles = {hw_us_sim:.3f} us @ 100MHz")
+print(f"Hardware NTT (simulation): {HW_CYCLES_SIM} cycles = {hw_us_sim:.3f} us @ 50MHz")
 print(f"Speedup (Python vs HW):    {sw_us/hw_us_sim:.1f}x")
 print(f"Verification: {'PASS' if mismatches==0 else 'FAIL'} ({mismatches}/256 mismatches)")

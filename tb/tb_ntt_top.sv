@@ -7,7 +7,19 @@ module tb_ntt_top;
     wire done;
     wire [11:0] rd_data;
 
-    ntt_top uut (.*); // Connect all signals
+    
+    ntt_top dut (
+    .clk       (clk),
+    .rst       (rst),
+    .start     (start),
+    .done      (done),
+    .busy      (busy),
+    .load_we   (load_we),
+    .load_addr (load_addr),
+    .load_data (load_data),
+    .rd_addr   (rd_addr),
+    .rd_data   (rd_data)
+);// Connect all signals
 
     always #5 clk = ~clk;
 
